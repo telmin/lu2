@@ -1,0 +1,34 @@
+CC = gcc
+#MPICC = /home/makino/PDS/mpic*/bin/mpicc 
+#MPICC = mpicc
+MPICC = /usr/mpi/gcc/mvapich-1.1.0/bin/mpicc
+#MPICC = /usr2/makino/PDS/openmpi133/bin/mpicc
+#MPICC = /usr2/makino/PDS/openmpi/bin/mpicc
+#MPICC = /usr6/koike/openmpi/bin/mpicc
+CCFLAGS = -O4 -funroll-loops  -I.  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE \
+   -D_FILE_OFFSET_BITS=64  -DTIMETEST  
+# -O4 does not work on zel2
+
+
+CBLASDIR = /usr2/makino/PDS/CBLAS
+CBLASINC = -I$(CBLASDIR)/src
+#CBLASLIB = $(CBLASDIR)/lib/LINUX/cblas_LINUX.a
+#GOTOBLASDIR = /usr2/makino/PDS/GotoBLAS1.26
+#GOTOBLASLIB = -L$(GOTOBLASDIR) -lgoto
+#GOTOBLASDIR = /usr6/koike/GotoBLAS2
+GOTOBLASDIR = /usr2/makino/PDS/GotoBLAS2test
+#GOTOBLASDIR = /usr2/makino/PDS/GotoBLAS2
+GOTOBLASLIB = -L$(GOTOBLASDIR)  -lgoto2 -lgfortran
+#GOTOBLASDIR = /usr6/koike
+#GOTOBLASLIB = -L$(GOTOBLASDIR) -lgoto_core2p-r1.26
+
+GDRBASELIB = -L/usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4 -L/usr2/makino/src/gdrlib/gdrtb3/lib -lsing -lhib 
+
+#GDRDGEMMLIB = \
+#  /usr6/koike/grapedr/gdrtb3/singlibMC_tb4/libdgemm3-tst/libgdrdgemm-novl.a
+GDRDGEMMLIB = /usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4/libdgemm2-tst/libgdrdgemm-ovl.a
+#GDRDGEMMLIB = /usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4/libdgemm2-tst/libgdrdgemm-chk.a
+GDRLIBS = $(GDRDGEMMLIB) $(GDRBASELIB)
+
+
+include Makefile.common

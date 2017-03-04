@@ -1,0 +1,129 @@
+#
+# Makefile.common
+# for lu2 package
+#
+# The followings are what should be specified in localized Makefile
+#
+# CC = gcc
+# #MPICC = /home/makino/PDS/mpic*/bin/mpicc 
+# MPICC = mpicc 
+# CCFLAGS = -O2 -I.  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DTIMETEST -DHUGEPAGE
+# # -O4 does not work on zel2
+
+# CBLASDIR = /home/makino/PDS/CBLAS
+# #GOTOBLASDIR = /home/makino/PDS/GotoBLAS1.26
+# #GOTOBLASLIB = -L$(GOTOBLASDIR) -lgoto
+# #GOTOBLASDIR = /home/makino/PDS/GotoBLAS2
+# GOTOBLASLIB =  -lgoto2 -lgfortran
+#CBLASINC = -I$(CBLASDIR)/src
+#CBLASLIB = $(CBLASDIR)/lib/LINUX/cblas_LINUX.a
+
+#
+# Here the common setting begins
+#
+BLASLIB = $(GOTOBLASLIB)
+
+MPISRCS = lu2_mp.h  lu2_mpi.h  lu2_mp_mpi.c   lu2_mpi.c   lu2_mplib.c
+
+DOCS = COPYRIGHT INSTALL    INSTALL_mpi INSTALL.j
+SCRIPTS = mympirun.csh mympirun2.csh   mympirun2b.csh  singletest.csh
+SRCS = lu2.c lu2lib.c lu2t.c lu2tlib.c second.c timerlib.c \
+       lu2lib.h lu2tlib.h lu2_mp_nompi.c timerlib.h mpiperftest.c \
+       gdrdgemm.c  gdrdgemm.h gemmtest.c \
+       $(MPISRCS) $(DOCS) $(SCRIPTS) \
+	Makefile  Makefile.common Makefile.mgv Makefile.RHEL6
+
+
+WEBDIR = /usr2/makino/WWW/softwares/lu
+
+CFLAGS =  $(CCFLAGS) $(CBLASINC) $(LNKFLAGS)  -DUNIX   -DREAL=double -g\
+      -fopenmp #  -DUSEMPIBCAST -p
+LDFLAGS = -lpthread $(CBLASLIB) $(LIBS) $(BLASLIB) -lm 
+BASEOBJS = lu2.o  second.o lu2tlib.o lu2_mp_nompi.o timerlib.o
+BASETESTOBJS = lu2test.o  second.o lu2_mp_nompi.o timerlib.o # lu2tlib.o
+#OBJS = lu2.o lu2lib.o second.o lu2tlib.o lu2_mp_nompi.o timerlib.o
+OBJS = $(BASEOBJS) lu2lib.o
+GDROBJS = $(BASEOBJS) lu2lib_gdr.o gdrdgemm.o
+GDRTESTOBJS = $(BASETESTOBJS)  gdrdgemm.o
+TOBJS = lu2t.o lu2tlib.o   timerlib.o second.o
+MPIBASEOBJS = lu2_mpi.o lu2_mp_mpi.o second.o lu2tlib.o  timerlib_mpi.o \
+          lu2_mplib.o
+MPIUCBASEOBJS = lu2_mpiuc.o lu2_mp_mpi.o second.o lu2tlib.o  timerlib_mpi.o \
+          lu2_mplib.o
+MPIOBJS = $(MPIBASEOBJS) lu2lib.o
+MPIGDROBJS = $(MPIBASEOBJS) lu2lib_gdr.o gdrdgemm.o
+MPIUCGDROBJS = $(MPIUCBASEOBJS) lu2lib_gdr.o gdrdgemm.o
+
+bins: lu2_mpi
+
+lu2_mpi_gdr: $(MPIGDROBJS) 
+	$(MPICC) $(CFLAGS)  -o lu2_mpi_gdr $(MPIGDROBJS) $(GDRLIBS) $(LDFLAGS)
+lu2_mpi_gdr_test: $(MPIGDROBJS) 
+	$(MPICC) $(CFLAGS)  -o lu2_mpi_gdr_test $(MPIGDROBJS) $(GDRLIBS) $(LDFLAGS)
+lu2_mpiuc_gdr: $(MPIUCGDROBJS) 
+	$(MPICC) $(CFLAGS)  -o lu2_mpiuc_gdr $(MPIUCGDROBJS) $(GDRLIBS) $(LDFLAGS)
+lu2_mpi: $(MPIOBJS) 
+	$(MPICC) $(CFLAGS)  -o lu2_mpi $(MPIOBJS) $(LDFLAGS)
+lu2: $(OBJS) 
+	$(CC) $(CFLAGS)  -o lu2 $(OBJS) $(LDFLAGS)
+lu2_gdr: $(GDROBJS) 
+	$(CC) $(CFLAGS)  -o lu2_gdr $(GDROBJS) $(GDRLIBS) $(LDFLAGS)
+
+lu2test: 	$(GDRTESTOBJS) 
+	$(CC) $(CFLAGS)  -o lu2test $(GDRTESTOBJS) $(GDRLIBS) 	$(LDFLAGS)
+
+lu2test.o: lu2test.c lu2lib.h  lu2tlib.h
+	$(CC) $(CFLAGS)   -DUSEGDR -c  lu2test.c
+lu2.o: lu2.c lu2lib.h  lu2tlib.h
+	$(CC) $(CFLAGS)  -c  lu2.c
+lu2t: $(TOBJS) 
+	$(CC) $(CFLAGS)  -o lu2t $(TOBJS) $(LDFLAGS)
+lu2t.o: lu2t.c
+	$(CC) $(CFLAGS)  -c  lu2t.c
+lu2tlib.o: lu2tlib.c
+	$(CC) $(CFLAGS)  -c  lu2tlib.c
+lu2lib.o: lu2lib.c lu2lib.h
+	$(CC)  -funroll-loops  $(CFLAGS)  -c  lu2lib.c
+lu2lib_gdr.o: lu2lib.c lu2lib.h gdrdgemm.h
+	$(CC) -funroll-loops $(CFLAGS) -DUSEGDR -o lu2lib_gdr.o -c  lu2lib.c
+timerlib.o: timerlib.c timerlib.h
+	$(CC) $(CFLAGS)  -c  timerlib.c
+timerlib_mpi.o: timerlib.c timerlib.h
+	$(MPICC) $(CFLAGS) -DMPI -c  timerlib.c
+	mv timerlib.o timerlib_mpi.o
+gdrdgemm.o: gdrdgemm.c  gdrdgemm.h
+	$(CC) $(CFLAGS)  -c  gdrdgemm.c
+
+second.o: second.c
+	$(CC) $(CFLAGS)  -c  second.c
+
+lu2_mpi.o: lu2_mpi.c lu2lib.h  lu2tlib.h lu2_mp.h
+	$(MPICC) $(CFLAGS)  -c  lu2_mpi.c
+lu2_mpiuc.o: lu2_mpi.c lu2lib.h  lu2tlib.h lu2_mp.h
+	$(MPICC) $(CFLAGS) -DCONCURRENT_UCOMM -o lu2_mpiuc.o -c  lu2_mpi.c
+
+lu2_mp_mpi.o: lu2_mp_mpi.c lu2lib.h  lu2tlib.h lu2_mp.h
+	$(MPICC) $(CFLAGS)  -c  lu2_mp_mpi.c
+lu2_mp_nompi.o: lu2_mp_nompi.c lu2lib.h  lu2tlib.h lu2_mp.h
+	$(CC) $(CFLAGS)  -c  lu2_mp_nompi.c
+
+lu2_mplib.o: lu2_mplib.c lu2lib.h  lu2tlib.h lu2_mp.h
+	$(MPICC) $(CFLAGS)  -c  lu2_mplib.c
+
+lu.tgz: $(SRCS)
+	tar cvzf lu.tgz $(SRCS)
+web: lu.tgz
+	cp lu.tgz $(WEBDIR)
+	cp index.html $(WEBDIR)
+	cp INSTALL $(WEBDIR)
+	cp INSTALL_mpi $(WEBDIR)
+	cp INSTALL.j $(WEBDIR)
+mpiperftest: mpiperftest.c  lu2_mp_mpi.o timerlib_mpi.o  lu2_mplib.o
+	$(MPICC) $(CFLAGS) $(LDFLAGS)  -o mpiperftest mpiperftest.c lu2_mp_mpi.o timerlib_mpi.o lu2_mplib.o
+
+gemmtest: gemmtest.c
+	  $(CC) -funroll-loops $(CFLAGS)  -o gemmtest gemmtest.c -lm
+
+clean:
+	@-rm lu2_mpi lu2 2>&1 | tee /dev/null
+	@-rm *.o

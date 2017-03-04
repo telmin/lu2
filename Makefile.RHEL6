@@ -1,0 +1,32 @@
+CC = gcc
+#MPICC = /home/makino/PDS/mpic*/bin/mpicc 
+#MPICC = mpicc
+## MVAPICH on SB (OFED 1.5.3.1)
+MPICC = /usr/mpi/gcc/mvapich-1.2.0/bin/mpicc
+#MPICC = /usr/mpi/gcc/openmpi-1.4.3/bin/mpicc
+# -O4 does not work on zel2
+
+# for GotoBLAS2
+CBLASDIR = /usr2/makino/PDS/CBLAS
+CBLASINC = -I$(CBLASDIR)/src
+GOTOBLASDIR = /usr2/makino/PDS/GotoBLAS2
+GOTOBLASLIB = -L$(GOTOBLASDIR)  -lgoto2 -lgfortran
+
+# for MKL
+CBLASINC = -I   /opt/intel/mkl/include
+GOTOBLASLIB = -L"/opt/intel/mkl/lib/intel64" "/opt/intel/mkl/lib/intel64"/libmkl_intel_lp64.a -Wl,--start-group "/opt/intel/mkl/lib/intel64"/libmkl_intel_thread.a "/opt/intel/mkl/lib/intel64"/libmkl_core.a -Wl,--end-group -L"/opt/intel/composerxe-2011.3.174/compiler/lib/intel64" -liomp5
+BLAS_FLAGS = -DMKL
+
+CCFLAGS = $(BLAS_FLAGS) -O2 -funroll-loops  -I.  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE \
+   -D_FILE_OFFSET_BITS=64  -DTIMETEST  -mavx
+
+GDRBASELIB = -L/usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4 -L/usr2/makino/src/gdrlib/gdrtb3/lib -lsing -lhib 
+
+#GDRDGEMMLIB = \
+#  /usr6/koike/grapedr/gdrtb3/singlibMC_tb4/libdgemm3-tst/libgdrdgemm-novl.a
+GDRDGEMMLIB = /usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4/libdgemm2-tst/libgdrdgemm-ovl.a
+#GDRDGEMMLIB = /usr2/makino/src/gdrlib/gdrtb3/singlibMC_tb4/libdgemm2-tst/libgdrdgemm-chk.a
+GDRLIBS = $(GDRDGEMMLIB) $(GDRBASELIB)
+
+
+include Makefile.common

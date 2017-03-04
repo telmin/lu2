@@ -1,0 +1,122 @@
+= Memo for lu2
+
+Time-stamp: <11/06/29 19:27:50 makino>
+Ver 1.1 J. Makino Nov  8 2009
+
+= Install (compile and link)
+
+To compile and link lu2, you need BLAS and CBLAS libraries.
+
+Edit Makefile and change lines
+
+CC =
+BLASLIB =
+CBLASLIB =
+CBLASINC =
+
+according to your system's setup. Then say
+
+  make lu2
+  
+If you want to replace cblas_dgemm with your favorite one, edit
+the function mydgemm() in the file lu2lib.c.
+
+Note that you still need cblas library even after you replaced
+mydgemm, since there is direct calls to cblas_dgemm from lu2tlib.c.
+
+Makefile.RHEL6 is what I used to compile current binaries. It assumes
+Intel MKL is installed at /opt/intel/mkl
+
+
+= How to use
+
+Try
+
+  lu2 -h
+
+to find out available command line options. All input parameters are given as
+command line options.
+
+== Current help output:
+
+ #lu2 --help
+ optchar = h optarg=(null)
+ lu2 options:
+   -h: This help
+   -s: seed (default=1)
+   -n: size of matrix (default=1024)
+   -b: block size (default=64)
+   -N: number of boards (default=1)
+   -g: usehugetlbfs (default=no)
+
+A bit more details of parameters
+
+ n: Size of matrix. Should be integer multiple of the block size given
+    by option "b"
+
+ b: Block size for blocked LU factrization. Current code probably
+    requires that b is 2^k, with positive integer k, and b >= 64.
+   
+ s: seed for random number generator. This problem uses drand48 and
+    srand48 routines
+
+ g: use of Hugepage (default:off, giving -g set on). This program
+    assumes that hugetlbfs is mounted on /mnt/huge. In order to use
+    hugepage, you need to do something like:
+
+    # echo 5120 > /proc/sys/vm/nr_hugepages
+    # mount -t hugetlbfs none /mnt/huge -o mode=0777
+
+    after booting the machine. (put the above to rc.local if necessary)
+    "5120" depends on the available amount of memory and the page size.
+   
+ N: (not used)
+ 
+== Sample run
+
+To use large blocksize such as 2048, you probably need to increase the
+stacksize. Try 128MB or so, as is done in the following example
+run. For this sample run, such a large stacksize is not necessary,
+though.
+
+ #limit stacksize 128M
+ #lu2 -g -n 2048 -b 128 -s 12345
+ optchar = g optarg=(null)
+ optchar = n optarg=2048
+ optchar = b optarg=128
+ optchar = s optarg=12345
+ N=2048 Seed=12345 NB=128 usehuge=1
+ N=2048 Seed=12345 NB=128 usehuge=1
+ read/set mat end
+ copy mat end
+ Emax=  4.749e-10
+ Nswap=0 cpsec =  0.732045 wsec=0.182529 31.3738 Gflops
+ swaprows time=1.31288e+07 ops/cycle=0.159737
+ scalerow time=429732 ops/cycle=4.88014
+ trans rtoc  time=6.94174e+06 ops/cycle=0.302108
+ trans ctor  time=6.11089e+06 ops/cycle=0.343183
+ trans mmul  time=1.26145e+07 ops/cycle=2.49374
+ trans nonrec cdec time=4.99973e+06 ops/cycle=0.419453
+ trans vvmul time=1.86561e+06 ops/cycle=1.12411
+ trans findp time=3.16096e+06 ops/cycle=0.663455
+ solve tri u time=9.52784e+06 ops/cycle=0.000214949
+ solve tri   time=5.03956e+07 ops/cycle=10.6531
+ matmul nk8  time=0 ops/cycle=inf
+ matmul snk  time=52044 ops/cycle=644.732
+ trans mmul8 time=6.7495e+06 ops/cycle=2.4857
+ trans mmul4 time=3.3151e+06 ops/cycle=2.53043
+ trans mmul2 time=2.50366e+06 ops/cycle=1.67527
+ DGEMM       time=4.22341e+08 ops/cycle=14.1948
+
+= When things failed...
+
+* This code is tested with gcc (4.1.x and 4.4.x) only. Other compilers
+  may fail. 
+
+* Likely reason for Segmentation fault are
+  * too small b (less than 64)
+  * too small stacksize
+
+Currently, this program is not designed to show detailed error
+messages when it fails. I plan to add more checking and messages...
+

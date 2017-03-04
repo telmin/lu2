@@ -1,0 +1,35 @@
+Compile memo for lu2_mpi
+
+Time-stamp: <09/11/01 19:59:38 makino>
+
+Ver 1.0a J. Makino Oct 25 2009
+
+To compile and link lu2_mpi, you need BLAS and CBLAS libraries.
+
+Edit Makefile and change lines
+
+CC =
+MPICC =
+BLASLIB =
+CBLASLIB =
+CBLASINC =
+
+according to your system's setup. Then say
+
+  make lu2_mpi
+  
+If you want to replace cblas_dgemm with your favorite one, edit
+the function mydgemm() in the file lu2lib.c.
+
+Also you need an MPI implementation which support
+MPI_THREAD_MULTIPLE. OpenMPI, if configured correctly, supports this,
+but to me knowledge mpich1 does not. Intel MPI seems to do.
+
+Try
+
+  lu2_mpi -h
+
+to find out available command line options. All input parameters are given as
+command line options.
+
+
